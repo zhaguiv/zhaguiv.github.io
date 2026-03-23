@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Windows 95</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#000; width:100vw; height:100vh; overflow:hidden;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-family:'Courier New',monospace; cursor:default;
+}
+
+/* ── BIOS ── */
+#bios {
+  position:absolute; inset:0; background:#000; color:#aaa;
+  font-family:'Courier New',monospace; font-size:13px; line-height:1.6;
+  padding:18px 24px; display:block; z-index:10;
+}
+#bios .white  { color:#fff; }
+#bios .yellow { color:#ff0; }
+#bios .cyan   { color:#0ff; }
+@keyframes blink { 50%{opacity:0} }
+.blink { animation:blink 0.9s step-end infinite; }
+
+/* ── LOGO SCREEN ── */
+#logo-screen {
+  position:absolute; inset:0; background:#000; display:none;
+  flex-direction:column; align-items:center; justify-content:center; gap:32px; z-index:9;
+}
+.win-logo { display:grid; grid-template-columns:1fr 1fr; gap:4px; transform:skewY(-3deg); width:80px; height:72px; }
+.pane { border-radius:1px; }
+.pane-tl { background:#f03808; transform:skewX(-8deg); }
+.pane-tr { background:#00b000; transform:skewX(-8deg); }
+.pane-bl { background:#0000c8; transform:skewX(-8deg); }
+.pane-br { background:#f0c000; transform:skewX(-8deg); }
+.win-wordmark { display:flex; flex-direction:column; gap:2px; margin-left:12px; }
+.logo-row { display:flex; align-items:center; gap:16px; }
+.win-text-microsoft { color:#c8c8c8; font-family:'Times New Roman',serif; font-size:18px; font-style:italic; letter-spacing:1px; }
+.win-text-windows { color:#fff; font-family:'Times New Roman',serif; font-size:38px; font-style:italic; font-weight:bold; letter-spacing:-1px; line-height:1; }
+.win-text-95 { color:#fff; font-family:'Times New Roman',serif; font-size:38px; font-weight:bold; font-style:italic; margin-left:6px; }
+.progress-container { width:200px; height:14px; border:1px solid #888; overflow:hidden; background:#000; position:relative; }
+.progress-track { display:flex; position:absolute; left:0; top:0; height:100%; animation:slideTrack 1.2s linear infinite; }
+.progress-block { width:18px; height:14px; flex-shrink:0; }
+@keyframes slideTrack { from{transform:translateX(0)} to{transform:translateX(-20px)} }
+
+/* ── DESKTOP ── */
+#desktop { position:absolute; inset:0; background:#008080; display:none; flex-direction:column; z-index:1; }
+#desktop-area { flex:1; position:relative; overflow:hidden; }
+
+/* ── DESKTOP ICONS ── */
+#icon-container {
+  position:absolute; top:12px; left:12px;
+  display:flex; flex-direction:column; gap:6px;
+}
+.icon {
+  display:flex; flex-direction:column; align-items:center;
+  gap:3px; width:72px; padding:4px 2px; cursor:pointer;
+  border:1px solid transparent; user-select:none;
+}
+.icon:hover { background:rgba(0,0,128,0.5); border:1px dotted #fff; }
+.icon.selected { background:rgba(0,0,128,0.7); border:1px dotted #fff; }
+.icon-label {
+  font-family:'Arial',sans-serif; font-size:11px; color:#fff;
+  text-align:center; line-height:1.3; text-shadow:1px 1px 1px #000;
+  word-break:break-word; max-width:68px;
+}
+
+/* ── TASKBAR ── */
+.taskbar {
+  width:100%; height:32px; background:#c0c0c0;
+  border-top:2px solid #fff; display:flex; align-items:center;
+  padding:0 4px; gap:4px; flex-shrink:0; position:relative; z-index:200;
+}
+.start-btn {
+  display:flex; align-items:center; gap:4px; background:#c0c0c0;
+  border-top:2px solid #fff; border-left:2px solid #fff;
+  border-right:2px solid #444; border-bottom:2px solid #444;
+  padding:2px 8px 2px 4px; font-family:'Arial',sans-serif;
+  font-size:12px; font-weight:bold; color:#000; cursor:pointer; flex-shrink:0;
+}
+.start-btn:active { border-top:2px solid #444; border-left:2px solid #444; border-right:2px solid #fff; border-bottom:2px solid #fff; }
+.start-logo { display:grid; grid-template-columns:1fr 1fr; gap:1px; width:16px; height:14px; }
+.s-tl{background:#f03808} .s-tr{background:#00b000} .s-bl{background:#0000c8} .s-br{background:#f0c000}
+.taskbar-time {
+  margin-left:auto; font-family:'Arial',sans-serif; font-size:11px;
+  border-top:1px solid #888; border-left:1px solid #888;
+  border-right:1px solid #fff; border-bottom:1px solid #fff;
+  padding:2px 6px; color:#000; background:#c0c0c0; flex-shrink:0;
+}
+#taskbar-btns { display:flex; gap:2px; flex:1; overflow:hidden; }
+.taskbar-btn {
+  height:22px; min-width:110px; max-width:150px; background:#c0c0c0;
+  border-top:2px solid #fff; border-left:2px solid #fff;
+  border-right:2px solid #444; border-bottom:2px solid #444;
+  font-family:'Arial',sans-serif; font-size:11px; color:#000;
+  padding:0 6px; cursor:pointer; display:flex; align-items:center; gap:4px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:0;
+}
+.taskbar-btn.active { border-top:2px solid #444; border-left:2px solid #444; border-right:2px solid #fff; border-bottom:2px solid #fff; background:#b8b8b8; }
+
+/* ── WIN95 WINDOW ── */
+.win-window {
+  position:absolute; background:#c0c0c0;
+  border-top:2px solid #fff; border-left:2px solid #fff;
+  border-right:2px solid #444; border-bottom:2px solid #444;
+  display:flex; flex-direction:column; min-width:480px; min-height:360px;
+  box-shadow:2px 2px 0 #000;
+}
+.win-titlebar {
+  background:#000080; color:#fff; height:22px;
+  display:flex; align-items:center; padding:0 4px; gap:4px;
+  cursor:move; user-select:none; flex-shrink:0;
+}
+.win-title-icon { width:14px; height:14px; flex-shrink:0; }
+.win-title-text { flex:1; font-family:'Arial',sans-serif; font-size:11px; font-weight:bold; white-space:nowrap; overflow:hidden; }
+.win-btns { display:flex; gap:2px; }
+.win-btn {
+  width:16px; height:14px; background:#c0c0c0;
+  border-top:1px solid #fff; border-left:1px solid #fff;
+  border-right:1px solid #444; border-bottom:1px solid #444;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Arial',sans-serif; font-size:10px; color:#000;
+  cursor:pointer; font-weight:bold; line-height:1; flex-shrink:0;
+}
+.win-btn:active { border-top:1px solid #444; border-left:1px solid #444; border-right:1px solid #fff; border-bottom:1px solid #fff; }
+.win-menubar {
+  background:#c0c0c0; border-bottom:1px solid #888;
+  display:flex; font-family:'Arial',sans-serif; font-size:12px; color:#000;
+  padding:2px 4px; gap:0; flex-shrink:0;
+}
+.win-menu-item { padding:2px 8px; cursor:default; white-space:nowrap; }
+.win-menu-item:hover { background:#000080; color:#fff; }
+.win-toolbar {
+  background:#c0c0c0; border-bottom:1px solid #888;
+  display:flex; align-items:center; padding:2px 4px; gap:2px; flex-shrink:0; flex-wrap:wrap;
+}
+.tb-btn {
+  width:22px; height:22px; background:#c0c0c0;
+  border-top:1px solid #fff; border-left:1px solid #fff;
+  border-right:1px solid #888; border-bottom:1px solid #888;
+  display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:11px; flex-shrink:0;
+}
+.tb-sep { width:1px; height:20px; background:#888; margin:0 2px; }
+.tb-label { font-family:'Arial',sans-serif; font-size:11px; padding:0 4px; }
+.win-body { flex:1; display:flex; overflow:hidden; min-height:0; }
+.doc-scroll {
+  flex:1; background:#808080; overflow-y:auto; padding:10px;
+  display:flex; flex-direction:column; align-items:center;
+}
+.doc-scroll::-webkit-scrollbar { width:16px; }
+.doc-scroll::-webkit-scrollbar-track { background:#c0c0c0; }
+.doc-scroll::-webkit-scrollbar-thumb {
+  background:#c0c0c0;
+  border-top:2px solid #fff; border-left:2px solid #fff;
+  border-right:2px solid #444; border-bottom:2px solid #444;
+}
+
+/* ── WORD PAGE ── */
+.doc-page {
+  background:#fff; width:640px; min-height:820px;
+  padding:56px 68px; font-family:'Times New Roman',serif;
+  font-size:11pt; color:#000; line-height:1.45;
+  box-shadow:2px 2px 5px rgba(0,0,0,0.5); flex-shrink:0;
+}
+.doc-page h1 { font-size:17pt; font-weight:bold; margin-bottom:3px; }
+.doc-page h2 {
+  font-size:11pt; font-weight:bold; text-transform:uppercase;
+  letter-spacing:0.05em; border-bottom:1px solid #000;
+  margin-top:18px; margin-bottom:6px; padding-bottom:2px;
+}
+.doc-page h3 { font-size:11pt; font-weight:bold; margin-bottom:2px; margin-top:10px; }
+.doc-page p  { margin-bottom:6px; font-size:10.5pt; }
+.doc-page ul { margin-left:18px; margin-bottom:8px; }
+.doc-page li { margin-bottom:3px; font-size:10pt; }
+.doc-page .center { text-align:center; }
+.doc-page .contact-line { text-align:center; font-size:9.5pt; color:#444; margin-bottom:10px; }
+.doc-page .job-header { display:flex; justify-content:space-between; align-items:baseline; }
+.doc-page .date { font-size:9.5pt; color:#555; font-style:italic; white-space:nowrap; }
+.doc-page .subtitle { font-size:9.5pt; color:#555; margin-bottom:4px; font-style:italic; }
+.doc-page table.sk { width:100%; border-collapse:collapse; margin-top:6px; }
+.doc-page table.sk td { padding:3px 6px; font-size:10pt; vertical-align:top; }
+.doc-page table.sk td:first-child { font-weight:bold; width:130px; white-space:nowrap; }
+.doc-page hr { border:none; border-top:1px solid #ccc; margin:10px 0; }
+.win-statusbar {
+  height:18px; border-top:1px solid #888; background:#c0c0c0;
+  display:flex; align-items:center; padding:0 4px; gap:4px; flex-shrink:0;
+}
+.status-cell {
+  font-family:'Arial',sans-serif; font-size:10px; color:#000;
+  border-top:1px solid #888; border-left:1px solid #888;
+  border-right:1px solid #fff; border-bottom:1px solid #fff;
+  padding:0 5px; height:14px; display:flex; align-items:center; white-space:nowrap;
+}
+
+/* ── HINT ── */
+#hint {
+  position:absolute; bottom:42px; left:50%; transform:translateX(-50%);
+  font-family:'Arial',sans-serif; font-size:11px; color:#fff;
+  background:rgba(0,0,0,0.45); padding:3px 10px;
+  animation:blink 1.4s step-end infinite; white-space:nowrap; pointer-events:none;
+}
+</style>
+</head>
+<body>
+
+<!-- BIOS -->
+<div id="bios"><div id="bios-lines"></div><span class="blink white" id="bios-cursor">█</span></div>
+
+<!-- LOGO -->
+<div id="logo-screen">
+  <div class="logo-row">
+    <div class="win-logo">
+      <div class="pane pane-tl"></div><div class="pane pane-tr"></div>
+      <div class="pane pane-bl"></div><div class="pane pane-br"></div>
+    </div>
+    <div class="win-wordmark">
+      <span class="win-text-microsoft">Microsoft</span>
+      <div style="display:flex;align-items:baseline">
+        <span class="win-text-windows">Windows</span>
+        <span class="win-text-95">95</span>
+      </div>
+    </div>
+  </div>
+  <div class="progress-container"><div class="progress-track" id="progress-track"></div></div>
+</div>
+
+<!-- DESKTOP -->
+<div id="desktop">
+  <div id="desktop-area">
+    <div id="icon-container"></div>
+    <div id="hint">Double-click an icon to open &nbsp;·&nbsp; Right-click to restart</div>
+  </div>
+  <div class="taskbar">
+    <div class="start-btn" id="start-btn">
+      <div class="start-logo"><div class="s-tl"></div><div class="s-tr"></div><div class="s-bl"></div><div class="s-br"></div></div>
+      Start
+    </div>
+    <div id="taskbar-btns"></div>
+    <div class="taskbar-time" id="clock">12:00 PM</div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════
+   RESUME DATA
+═══════════════════ */
+const DOCS = [
+  {
+    id:'summary', label:'Summary.doc', title:'Summary.doc - Microsoft Word',
+    color:'#4169e1',
+    content:`
+      <h1 class="center">Vic</h1>
+      <p class="contact-line">Chicago, IL &nbsp;·&nbsp; github.com/vic &nbsp;·&nbsp; linkedin.com/in/vic</p>
+      <hr/>
+      <h2>Professional Summary</h2>
+      <p>Full-stack Technical Lead and Software Engineer with extensive experience designing and delivering multi-platform products across web, mobile, and backend microservices. Deep expertise in React, TypeScript, React Native (iOS), and Java Spring Boot in production environments.</p>
+      <p>Known for strong architectural instincts — favoring explicit data flow, clean separation of concerns, and comprehensive test coverage. Equally comfortable leading system design discussions, owning end-to-end feature delivery, or diving into platform-level infrastructure.</p>
+      <p>Currently the Technical Lead on <strong>FieldSpark</strong>, a full-stack enterprise platform spanning a React/Vite web frontend, a bare React Native iOS app, and a Java Spring Boot microservices backend.</p>
+      <hr/>
+      <h2>Core Competencies</h2>
+      <ul>
+        <li>Technical leadership &amp; architecture design across web, mobile, and backend</li>
+        <li>End-to-end iOS app development — Xcode to App Store submission</li>
+        <li>Real-time data pipelines with Kafka and event-driven microservice patterns</li>
+        <li>Firebase Cloud Messaging, APNs, and push notification infrastructure</li>
+        <li>API design, TanStack Query integration, and client-server data modeling</li>
+        <li>Docker Compose, PostgreSQL, and Liquibase migration management</li>
+        <li>Cook County landlord &amp; property management, Illinois/CRLTO compliance</li>
+      </ul>
+    `
+  },
+  {
+    id:'experience', label:'Experience.doc', title:'Experience.doc - Microsoft Word',
+    color:'#228B22',
+    content:`
+      <h1 class="center">Work Experience</h1>
+      <hr/>
+      <h2>FieldSpark</h2>
+      <div class="job-header"><h3>Technical Lead &amp; Software Engineer</h3><span class="date">Current</span></div>
+      <p class="subtitle">React · TypeScript · Vite · React Native (iOS) · Java Spring Boot · Kafka · Firebase</p>
+      <ul>
+        <li>Serve as technical lead across a multi-platform product: React/Vite web frontend, bare React Native iOS app, and Java Spring Boot microservices backend</li>
+        <li>Architected Firebase Cloud Messaging end-to-end: APNs configuration, token lifecycle management, notification providers, modular Firebase v22 API migration</li>
+        <li>Built a Kafka consumer architecture in the Java notification microservice with retry logic, dead-letter handling, and graceful error recovery</li>
+        <li>Developed sentiment analysis visualization with Victory Native XL — area charts, gradient fills, audio playback sync, chunk-based rendering</li>
+        <li>Implemented Drawer Navigator architecture enabling deep-link push notification routing across the mobile app</li>
+        <li>Submitted FieldSpark Mobile v2.0.3 to the Apple App Store; managed multi-environment Xcode scheme configuration for TestFlight and production</li>
+        <li>Built a roleplay training feature with LiveKit integration, session state management, and TanStack Query API calls</li>
+        <li>Led unit test generation across many components; established consistent test patterns using testIDs, mock isolation, and Jest best practices</li>
+        <li>Refactored SentimentAnalysisPlayback into custom hooks and sub-components; migrated styling to a custom theme system</li>
+        <li>Resolved Liquibase migration issues including YAML syntax corrections and seed data generation</li>
+      </ul>
+      <hr/>
+      <h2>Property Management</h2>
+      <div class="job-header"><h3>Independent Landlord</h3><span class="date">Ongoing</span></div>
+      <p class="subtitle">Cook County, Chicago, IL</p>
+      <ul>
+        <li>Own and manage rental properties under Illinois landlord-tenant law and the Chicago CRLTO</li>
+        <li>Draft bilingual (English/Spanish) legal notice templates: noise violations, non-renewal, Chicago Fair Notice Ordinance</li>
+        <li>Navigate lease negotiations, early termination requests, and cooperative resolution under Illinois law</li>
+        <li>Manage mortgage refinancing analysis, break-even calculations, and multi-unit investment property financials</li>
+        <li>Handle LLC dissolution, multi-state tax filings, and Cook County property tax compliance</li>
+      </ul>
+    `
+  },
+  {
+    id:'skills', label:'Skills.doc', title:'Skills.doc - Microsoft Word',
+    color:'#8B0000',
+    content:`
+      <h1 class="center">Technical Skills</h1>
+      <hr/>
+      <h2>Frontend — Web</h2>
+      <table class="sk">
+        <tr><td>Frameworks</td><td>React, Vite, TypeScript</td></tr>
+        <tr><td>Routing / Data</td><td>TanStack Router, TanStack Query</td></tr>
+        <tr><td>Auth</td><td>Firebase Auth</td></tr>
+        <tr><td>UI Libraries</td><td>Material UI (MUI)</td></tr>
+        <tr><td>Testing</td><td>Vitest, React Testing Library</td></tr>
+      </table>
+      <h2>Mobile — iOS</h2>
+      <table class="sk">
+        <tr><td>Framework</td><td>React Native (no Expo), iOS-focused</td></tr>
+        <tr><td>Navigation</td><td>React Navigation (Stack + Drawer)</td></tr>
+        <tr><td>Data / State</td><td>TanStack Query, custom hooks</td></tr>
+        <tr><td>Push Notif.</td><td>Firebase Cloud Messaging, APNs</td></tr>
+        <tr><td>Media / AV</td><td>LiveKit, Victory Native XL, audio sync</td></tr>
+        <tr><td>UI</td><td>React Native Paper, custom theme system</td></tr>
+        <tr><td>Testing</td><td>Jest, testID-based component testing</td></tr>
+        <tr><td>Deployment</td><td>Xcode, TestFlight, App Store Connect</td></tr>
+      </table>
+      <h2>Backend — Microservices</h2>
+      <table class="sk">
+        <tr><td>Framework</td><td>Java Spring Boot</td></tr>
+        <tr><td>Messaging</td><td>Apache Kafka (consumer, retry logic)</td></tr>
+        <tr><td>ORM / DB</td><td>Spring Data JPA, PostgreSQL</td></tr>
+        <tr><td>Migrations</td><td>Liquibase (YAML)</td></tr>
+        <tr><td>Testing</td><td>AssertJ, unit + integration tests</td></tr>
+        <tr><td>Infra</td><td>Docker Compose</td></tr>
+      </table>
+      <h2>Tools &amp; Other</h2>
+      <table class="sk">
+        <tr><td>Version Control</td><td>Git, PR-based workflows</td></tr>
+        <tr><td>Languages</td><td>TypeScript, Java, JavaScript, SQL</td></tr>
+        <tr><td>3D / Creative</td><td>Unreal Engine, Blender</td></tr>
+        <tr><td>Accounting</td><td>QuickBooks Enterprise</td></tr>
+      </table>
+    `
+  },
+  {
+    id:'projects', label:'Projects.doc', title:'Projects.doc - Microsoft Word',
+    color:'#8B4513',
+    content:`
+      <h1 class="center">Projects &amp; Achievements</h1>
+      <hr/>
+      <h3>FieldSpark Mobile — Apple App Store (v2.0.3)</h3>
+      <p class="subtitle">React Native · iOS · LiveKit · Firebase · TanStack Query</p>
+      <ul>
+        <li>Led end-to-end development and App Store submission of FieldSpark Mobile v2.0.3</li>
+        <li>Built a roleplay training module with LiveKit real-time audio/video and scenario management</li>
+        <li>Implemented sentiment analysis playback with synchronized audio and animated area charts</li>
+        <li>Configured multi-environment Xcode schemes for development, staging, and production</li>
+      </ul>
+      <hr/>
+      <h3>Push Notification Infrastructure</h3>
+      <p class="subtitle">Firebase Cloud Messaging · APNs · Java Kafka · Spring Boot</p>
+      <ul>
+        <li>Designed FCM end-to-end: APNs entitlements, device token lifecycle, foreground/background handling</li>
+        <li>Migrated Firebase SDK to modular v22 API across the React Native app</li>
+        <li>Built a Kafka-based notification consumer microservice with retry queues and dead-letter handling</li>
+        <li>Implemented Drawer Navigator deep-link routing so push taps navigate to the correct in-app screen</li>
+      </ul>
+      <hr/>
+      <h3>FieldSpark Web Platform</h3>
+      <p class="subtitle">React · TypeScript · Vite · TanStack Router · MUI · Firebase Auth</p>
+      <ul>
+        <li>Built and maintained the React/Vite web frontend serving as the primary management interface</li>
+        <li>Architected TanStack Router navigation with authenticated route guards and lazy-loaded segments</li>
+        <li>Established Vitest-based test suite with consistent mock isolation patterns</li>
+      </ul>
+      <hr/>
+      <h3>Multi-Unit Investment Property Portfolio</h3>
+      <p class="subtitle">Cook County, Chicago, IL</p>
+      <ul>
+        <li>Acquired and manage multiple rental units in Cook County, Chicago</li>
+        <li>Structured LLC entities for property ownership; managed dissolution and multi-state tax compliance</li>
+        <li>Executed mortgage refinance analysis with break-even modeling and closing cost optimization</li>
+        <li>Full CRLTO compliance including bilingual tenant notice templates and fair notice procedures</li>
+      </ul>
+    `
+  },
+  {
+    id:'contact', label:'Contact.doc', title:'Contact.doc - Microsoft Word',
+    color:'#4B0082',
+    content:`
+      <h1 class="center">Contact</h1>
+      <hr/>
+      <br/>
+      <table class="sk">
+        <tr><td>Name</td><td>Vic</td></tr>
+        <tr><td>Location</td><td>Chicago, Illinois</td></tr>
+        <tr><td>GitHub</td><td>github.com/vic</td></tr>
+        <tr><td>LinkedIn</td><td>linkedin.com/in/vic</td></tr>
+        <tr><td>Email</td><td>vic@email.com</td></tr>
+      </table>
+      <br/><hr/>
+      <h2>References</h2>
+      <p>Available upon request.</p>
+      <br/><hr/>
+      <h2>Open To</h2>
+      <ul>
+        <li>Senior / Staff Software Engineer roles (full-stack or mobile-focused)</li>
+        <li>Technical Lead positions with architecture ownership</li>
+        <li>Consulting in React Native iOS, Java microservices, or push notification infrastructure</li>
+        <li>Remote-first or Chicago-based opportunities</li>
+      </ul>
+    `
+  }
+];
+
+/* ═══════════════════
+   AUDIO
+═══════════════════ */
+let audioCtx = null;
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+function playStartup() {
+  const ctx = getCtx();
+  function bp(freq,t,dur,vol){
+    [1,2,3,4].forEach((h,i)=>{
+      const o=ctx.createOscillator(),g=ctx.createGain(),now=ctx.currentTime+t;
+      o.type='sine'; o.frequency.value=freq*h;
+      g.gain.setValueAtTime(0,now);
+      g.gain.linearRampToValueAtTime(vol/(i+1),now+0.06);
+      g.gain.exponentialRampToValueAtTime(0.0001,now+dur/(i*0.5+1));
+      o.connect(g); g.connect(ctx.destination); o.start(now); o.stop(now+dur+0.1);
+    });
+  }
+  function ch(freqs,t,dur,vol){ freqs.forEach(f=>bp(f,t,dur,vol/freqs.length)); }
+  bp(392,0.00,2.5,0.18); bp(523,0.30,2.2,0.18); bp(659,0.55,2.0,0.16); bp(784,0.75,1.8,0.16);
+  ch([261,330,392,523],0.80,2.4,0.22); bp(1047,1.00,1.8,0.10);
+  ch([196,247,311,392],1.50,1.8,0.18); ch([261,330,392],2.00,1.4,0.12);
+}
+function playClick(){
+  const ctx=getCtx(), buf=ctx.createBuffer(1,ctx.sampleRate*0.04,ctx.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(d.length*0.3));
+  const s=ctx.createBufferSource(),g=ctx.createGain();
+  s.buffer=buf; g.gain.value=0.15; s.connect(g); g.connect(ctx.destination); s.start();
+}
+function playOpen(){
+  const ctx=getCtx();
+  [880,1109,1319].forEach((f,i)=>{
+    const o=ctx.createOscillator(),g=ctx.createGain(),t=ctx.currentTime+i*0.06;
+    o.type='sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.07,t+0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.18);
+    o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t+0.22);
+  });
+}
+
+/* ═══════════════════
+   BIOS
+═══════════════════ */
+const LINES = [
+  {t:'Award Modular BIOS v4.51PG, An Energy Star Ally',c:'white'},
+  {t:'Copyright (C) 1984-96, Award Software, Inc.',c:''},
+  {t:''},
+  {t:'IBM COMPATIBLE 486DX/66 BIOS',c:'white'},
+  {t:'PCI/ISA BIOS (2A59IMS9)',c:''},
+  {t:''},
+  {t:'CPU Type  : Intel Pentium II  233MHz',c:''},
+  {t:'Co-Processor : Installed',c:''},
+  {t:'CPU Clock  : 233MHz',c:''},
+  {t:''},
+  {t:'Memory Test : ',c:'',dyn:true,val:'32768K OK'},
+  {t:''},
+  {t:'Award Plug and Play BIOS Extension v1.0A',c:'cyan'},
+  {t:'Initialize Plug and Play Cards...',c:''},
+  {t:'PNP Init Completed',c:''},
+  {t:''},
+  {t:'Detecting IDE drives...',c:''},
+  {t:'  Primary Master  : QUANTUM FIREBALL TM2110A  2.1GB',c:'yellow'},
+  {t:'  Primary Slave   : ATAPI CDROM   24X',c:'yellow'},
+  {t:''},
+  {t:'Press DEL to enter SETUP',c:'white'},
+  {t:''},
+  {t:'Starting Windows 95...',c:'white'},
+];
+
+async function runBios(){
+  const con=document.getElementById('bios-lines'); con.innerHTML='';
+  const cur=document.getElementById('bios-cursor'); cur.style.display='inline';
+  for(let i=0;i<LINES.length;i++){
+    const l=LINES[i], div=document.createElement('div');
+    if(!l.t){ div.innerHTML='&nbsp;'; }
+    else if(l.dyn){
+      div.className=l.c||''; div.textContent=l.t; con.appendChild(div); await sleep(60);
+      for(let k=1024;k<=32768;k+=1024){ div.textContent=l.t+k+'K'; await sleep(14); }
+      div.textContent=l.t+l.val; continue;
+    } else { div.className=l.c||''; div.textContent=l.t; }
+    con.appendChild(div); await sleep(i<6?25:55);
+  }
+  await sleep(600); cur.style.display='none'; showLogo();
+}
+
+/* ═══════════════════
+   LOGO
+═══════════════════ */
+function buildTrack(){
+  const t=document.getElementById('progress-track'); t.innerHTML='';
+  const C=['#000080','#000080','#1010a0','#0000ff','#2020c0','#000080','#000080','#000080','#0000c8'];
+  for(let i=0;i<24;i++){const b=document.createElement('div');b.className='progress-block';b.style.background=C[i%C.length];t.appendChild(b);}
+}
+function showLogo(){
+  document.getElementById('bios').style.display='none';
+  document.getElementById('logo-screen').style.display='flex';
+  buildTrack(); playStartup();
+  setTimeout(showDesktop, 3400);
+}
+
+/* ═══════════════════
+   WORD DOC ICON SVG
+═══════════════════ */
+function iconSVG(color){
+  return `<svg viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg" style="width:32px;height:40px;display:block">
+    <rect x="0" y="0" width="22" height="40" rx="1" fill="#fff" stroke="#999" stroke-width="0.6"/>
+    <polygon points="22,0 32,10 22,10" fill="#d0d0d0"/>
+    <polygon points="22,0 32,10 22,10" fill="none" stroke="#999" stroke-width="0.6"/>
+    <rect x="22" y="10" width="10" height="30" fill="#fff" stroke="#999" stroke-width="0.6"/>
+    <rect x="3" y="12" width="12" height="2.5" rx="0.5" fill="${color}" opacity="0.9"/>
+    <rect x="3" y="17.5" width="26" height="1.5" rx="0.5" fill="#bbb"/>
+    <rect x="3" y="21"   width="26" height="1.5" rx="0.5" fill="#bbb"/>
+    <rect x="3" y="24.5" width="20" height="1.5" rx="0.5" fill="#bbb"/>
+    <rect x="3" y="28"   width="26" height="1.5" rx="0.5" fill="#bbb"/>
+    <rect x="3" y="31.5" width="14" height="1.5" rx="0.5" fill="#bbb"/>
+    <rect x="3" y="35"   width="22" height="1.5" rx="0.5" fill="#bbb"/>
+  </svg>`;
+}
+
+/* ═══════════════════
+   DESKTOP + ICONS
+═══════════════════ */
+let zTop=100;
+const openWins={};
+
+function showDesktop(){
+  document.getElementById('logo-screen').style.display='none';
+  document.getElementById('desktop').style.display='flex';
+  buildIcons(); updateClock(); setInterval(updateClock,10000);
+}
+
+function buildIcons(){
+  const con=document.getElementById('icon-container');
+  DOCS.forEach(doc=>{
+    const ic=document.createElement('div');
+    ic.className='icon'; ic.dataset.id=doc.id;
+    ic.innerHTML=iconSVG(doc.color)+`<span class="icon-label">${doc.label}</span>`;
+    let clicks=0, timer=null;
+    ic.addEventListener('click',e=>{
+      e.stopPropagation(); playClick();
+      document.querySelectorAll('.icon').forEach(i=>i.classList.remove('selected'));
+      ic.classList.add('selected');
+      clicks++;
+      if(clicks===1){ timer=setTimeout(()=>{clicks=0;},380); }
+      else { clearTimeout(timer); clicks=0; openDoc(doc); }
+    });
+    con.appendChild(ic);
+  });
+  document.getElementById('desktop-area').addEventListener('click',()=>{
+    document.querySelectorAll('.icon').forEach(i=>i.classList.remove('selected'));
+  });
+  document.getElementById('desktop').addEventListener('contextmenu',e=>{ e.preventDefault(); restart(); });
+}
+
+/* ═══════════════════
+   OPEN WINDOW
+═══════════════════ */
+function openDoc(doc){
+  if(openWins[doc.id]){
+    const w=openWins[doc.id]; w.style.display='flex'; w.style.zIndex=++zTop;
+    setActive(doc.id,true); return;
+  }
+  playOpen();
+
+  const offset=Object.keys(openWins).length*26;
+  const w=document.createElement('div');
+  w.className='win-window';
+  w.style.cssText=`top:${40+offset}px;left:${70+offset}px;width:680px;height:540px;z-index:${++zTop}`;
+
+  w.innerHTML=`
+    <div class="win-titlebar">
+      <svg class="win-title-icon" viewBox="0 0 16 20"><rect width="10" height="20" fill="#fff" stroke="#aaa" stroke-width="0.5"/><polygon points="10,0 16,6 10,6" fill="#ccc"/><rect x="1.5" y="8" width="7" height="1.5" fill="#4169e1"/><rect x="1.5" y="11" width="9" height="1.5" fill="#aaa"/><rect x="1.5" y="14" width="9" height="1.5" fill="#aaa"/><rect x="1.5" y="17" width="6" height="1.5" fill="#aaa"/></svg>
+      <span class="win-title-text">${doc.title}</span>
+      <div class="win-btns">
+        <div class="win-btn btn-min">_</div>
+        <div class="win-btn btn-max">□</div>
+        <div class="win-btn btn-close">✕</div>
+      </div>
+    </div>
+    <div class="win-menubar">
+      <span class="win-menu-item">File</span><span class="win-menu-item">Edit</span><span class="win-menu-item">View</span>
+      <span class="win-menu-item">Insert</span><span class="win-menu-item">Format</span><span class="win-menu-item">Tools</span>
+      <span class="win-menu-item">Table</span><span class="win-menu-item">Window</span><span class="win-menu-item">Help</span>
+    </div>
+    <div class="win-toolbar">
+      <div class="tb-btn">💾</div><div class="tb-btn">📁</div><div class="tb-btn">🖨</div>
+      <div class="tb-sep"></div>
+      <div class="tb-btn">✂</div><div class="tb-btn">📋</div>
+      <div class="tb-sep"></div>
+      <div class="tb-btn"><b>B</b></div><div class="tb-btn"><i>I</i></div><div class="tb-btn"><u>U</u></div>
+      <div class="tb-sep"></div>
+      <span class="tb-label" style="font-family:Arial;font-size:11px">Times New Roman</span>
+      <div class="tb-sep"></div>
+      <span class="tb-label" style="font-family:Arial;font-size:11px">12</span>
+    </div>
+    <div class="win-body">
+      <div class="doc-scroll"><div class="doc-page">${doc.content}</div></div>
+    </div>
+    <div class="win-statusbar">
+      <div class="status-cell">Page 1</div>
+      <div class="status-cell">Sec 1</div>
+      <div class="status-cell">1/1</div>
+      <div class="status-cell" style="margin-left:auto">OVR</div>
+    </div>`;
+
+  // Focus
+  w.addEventListener('mousedown',()=>{
+    w.style.zIndex=++zTop;
+    document.querySelectorAll('.win-titlebar').forEach(tb=>tb.style.background='#808080');
+    w.querySelector('.win-titlebar').style.background='#000080';
+  });
+
+  // Close
+  w.querySelector('.btn-close').addEventListener('click',()=>{ playClick(); w.remove(); delete openWins[doc.id]; removeTaskBtn(doc.id); });
+
+  // Minimize
+  w.querySelector('.btn-min').addEventListener('click',()=>{ playClick(); w.style.display='none'; setActive(doc.id,false); });
+
+  // Maximize / restore
+  let maxed=false, saved={};
+  w.querySelector('.btn-max').addEventListener('click',()=>{
+    playClick();
+    const area=document.getElementById('desktop-area');
+    if(!maxed){ saved={top:w.style.top,left:w.style.left,width:w.style.width,height:w.style.height}; w.style.cssText+=`;top:0;left:0;width:${area.offsetWidth}px;height:${area.offsetHeight}px`; maxed=true; }
+    else { w.style.top=saved.top; w.style.left=saved.left; w.style.width=saved.width; w.style.height=saved.height; maxed=false; }
+  });
+
+  makeDraggable(w);
+  document.getElementById('desktop-area').appendChild(w);
+  openWins[doc.id]=w;
+  addTaskBtn(doc);
+}
+
+function makeDraggable(win){
+  const tb=win.querySelector('.win-titlebar');
+  let drag=false,ox=0,oy=0;
+  tb.addEventListener('mousedown',e=>{ if(e.target.classList.contains('win-btn'))return; drag=true; ox=e.clientX-win.offsetLeft; oy=e.clientY-win.offsetTop; e.preventDefault(); });
+  document.addEventListener('mousemove',e=>{ if(!drag)return; win.style.left=(e.clientX-ox)+'px'; win.style.top=(e.clientY-oy)+'px'; });
+  document.addEventListener('mouseup',()=>{ drag=false; });
+}
+
+/* ═══════════════════
+   TASKBAR
+═══════════════════ */
+function addTaskBtn(doc){
+  const b=document.createElement('div');
+  b.className='taskbar-btn active'; b.id='tb-'+doc.id;
+  b.innerHTML=`<svg style="width:12px;height:14px;flex-shrink:0" viewBox="0 0 16 20"><rect width="10" height="20" fill="#fff" stroke="#aaa" stroke-width="0.5"/><polygon points="10,0 16,6 10,6" fill="#ccc"/><rect x="1.5" y="8" width="7" height="1.5" fill="#4169e1"/><rect x="1.5" y="11" width="9" height="1" fill="#aaa"/></svg> ${doc.label}`;
+  b.addEventListener('click',()=>{
+    playClick();
+    const win=openWins[doc.id]; if(!win)return;
+    if(win.style.display==='none'){ win.style.display='flex'; win.style.zIndex=++zTop; setActive(doc.id,true); }
+    else { win.style.display='none'; setActive(doc.id,false); }
+  });
+  document.getElementById('taskbar-btns').appendChild(b);
+}
+function setActive(id,active){ const b=document.getElementById('tb-'+id); if(b)b.classList.toggle('active',active); }
+function removeTaskBtn(id){ const b=document.getElementById('tb-'+id); if(b)b.remove(); }
+
+/* ═══════════════════
+   CLOCK
+═══════════════════ */
+function updateClock(){
+  const n=new Date(); let h=n.getHours(),m=n.getMinutes(); const ap=h>=12?'PM':'AM';
+  h=h%12||12; document.getElementById('clock').textContent=h+':'+String(m).padStart(2,'0')+' '+ap;
+}
+
+/* ═══════════════════
+   RESTART
+═══════════════════ */
+function restart(){
+  if(audioCtx){ audioCtx.close(); audioCtx=null; }
+  Object.keys(openWins).forEach(k=>{ openWins[k].remove(); delete openWins[k]; });
+  document.getElementById('taskbar-btns').innerHTML='';
+  document.getElementById('icon-container').innerHTML='';
+  document.getElementById('desktop').style.display='none';
+  document.getElementById('logo-screen').style.display='none';
+  document.getElementById('bios').style.display='block';
+  runBios();
+}
+
+runBios();
+</script>
+</body>
+</html>
