@@ -427,6 +427,10 @@ const DOCS = [
     `
   },
   {
+    id:'resume', label:'Resume.docx', title:'',
+    color:'#cc0000', download: true
+  },
+  {
     id:'contact', label:'Contact.doc', title:'Contact.doc - Microsoft Word',
     color:'#4B0082',
     content:`
@@ -620,6 +624,14 @@ function buildIcons(){
    OPEN WINDOW
 ═══════════════════ */
 function openDoc(doc){
+  if(doc.download){
+    playClick();
+    const a=document.createElement('a');
+    a.href='assets/VictorZhagui-SolutionArchitect-Condensed.docx';
+    a.download='VictorZhagui-SolutionArchitect-Condensed.docx';
+    a.click();
+    return;
+  }
   if(openWins[doc.id]){
     const w=openWins[doc.id]; w.style.display='flex'; w.style.zIndex=++zTop;
     setActive(doc.id,true); return;
